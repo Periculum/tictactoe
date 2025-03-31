@@ -47,8 +47,6 @@ class tictactoe:
                         self.check_game_result()
                         # players move again
                         players_turn = True
-
-
                 # if game is over show endscreen and reset board
                 elif self.state == "game_over":
                     if event.type  == pg.MOUSEBUTTONDOWN:
