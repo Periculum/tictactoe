@@ -42,6 +42,7 @@ class tictactoe:
                             # switch to computers turn
                             players_turn = False
                     # Computers turn, if possible he makes a move
+                    # must be elif, because with if, the computer would have a turn even when player won in the move before
                     elif self.turns_left() and not players_turn:
                         self.random_move()
                         self.check_game_result()
@@ -99,9 +100,9 @@ class tictactoe:
         # diagonal strings
         diagonal_left = ''.join(self.board[i][i] for i in range(3))
         diagonal_right = ''.join(self.board[i][2 - i] for i in range(3))
-        # row and columns
         for row in range(3):
             for col in range(3):
+                # row and columns
                 col_values = ''.join(self.board[row][c] for c in range(3))
                 row_values = ''.join(self.board[r][col] for r in range(3))
                 if 'XXX' in (row_values, col_values, diagonal_left, diagonal_right):
@@ -161,9 +162,7 @@ class tictactoe:
 
     # reset board
     def reset_board(self):
-        board = [['','',''],
-                ['','',''],
-                ['','','']]
+        board = [['','',''],['','',''],['','','']]
         return board
 
 
