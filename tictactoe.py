@@ -9,7 +9,8 @@ FPS = 60
 class tictactoe:
     def __init__(self):
         self.board = self.reset_board()
-
+        self.state = "running" # can be "running" or "game_over"
+        self.result = 0 # 0 = tie, 1 = player won, 2 = computer won
 
     def runGame(self):
         pg.init()
@@ -28,56 +29,49 @@ class tictactoe:
                 if event.type == pg.QUIT:
                     pg.quit()
                     raise SystemExit
-                # track mouseclick from user
-                elif event.type == pg.MOUSEBUTTONDOWN:
-                    # find coordinates from the box that got clicked
-                    box_coordinates = self.calculate_box(pg.mouse.get_pos())
-                    print(box_coordinates)
-                    # if players turn, check if box is empty and set cross
-                    if players_turn and self.board[box_coordinates[0]][box_coordinates[1]] == '':
-                        self.board[box_coordinates[0]][box_coordinates[1]] = 'X'
-                        # switch to computers turn
-                        players_turn = False
 
-            # Computer takes a turn if possible
-            if players_turn == False and self.turns_left():
-                self.random_move()
-                # player moves now
-                players_turn = True
-
-
-            # check if Game ended with win, loss or tie
-            status = self.game_ends()
-            if status > 0 or self.turns_left() == False:
-                print("Game is over")
-                #self.game_over_screen(status)
+                if self.state == "running":
+                    # player makes a move
+                    if event.type == pg.MOUSEBUTTONDOWN and players_turn:
+                        # find coordinates from the box that got clicked
+                        box_coordinates = self.calculate_box(pg.mouse.get_pos())
+                        # check if box is empty and set cross
+                        if self.board[box_coordinates[0]][box_coordinates[1]] == '':
+                            self.board[box_coordinates[0]][box_coordinates[1]] = 'X'
+                            self.check_game_result()
+                            # switch to computers turn
+                            players_turn = False
+                    # Computers turn, if possible he makes a move
+                    elif self.turns_left() and not players_turn:
+                        self.random_move()
+                        self.check_game_result()
+                        # players move again
+                        players_turn = True
 
 
-            # fill background and draw tictactoe-field
-            screen.fill("white")
-            for row in range(1, 3):
-                for col in range(1, 3):
-                    pg.draw.line(screen, "black", (WIDTH * col / 3, 0), (WIDTH * col / 3, HEIGHT))
-                    pg.draw.line(screen, "black", (0, HEIGHT * row / 3), (WIDTH, HEIGHT * row / 3))
+                # if game is over show endscreen and reset board
+                elif self.state == "game_over":
+                    if event.type  == pg.MOUSEBUTTONDOWN:
+                        # reset everything
+                        self.board = self.reset_board()  
+                        self.state = "running"
+                        players_turn = True
+           
+            
+            # draws tictactoe board, crosses and circles              
+            self.draw_board(screen)
+                
 
-            # draw crosses and circles
-            for row in range(3):
-                for col in range(3):
-                    if self.board[row][col] == 'O':
-                        # draw circle
-                        circle_size = WIDTH / 8
-                        pg.draw.circle(screen, "black", ((WIDTH * col / 3) + WIDTH / 6, (HEIGHT * row / 3) + HEIGHT / 6), circle_size)
-                        pg.draw.circle(screen, "white", ((WIDTH * col / 3) + WIDTH / 6, (HEIGHT * row / 3) + HEIGHT / 6), circle_size - 1)
-                    elif self.board[row][col] == 'X':
-                        # draw cross
-                        offset = WIDTH / 12
-                        pg.draw.line(screen, "black", (WIDTH * col / 3 + offset, HEIGHT * row / 3 + offset), (WIDTH * col / 3 + offset * 3, HEIGHT * row / 3 + offset * 3))
-                        pg.draw.line(screen, "black", (WIDTH * col / 3 + offset, HEIGHT * row / 3 + offset * 3), (WIDTH * col / 3 + offset * 3, HEIGHT * row / 3 + offset))
-                        
+            # if game ends draw endscreen
+            if self.state == "game_over":
+                pg.time.delay(200)
+                self.draw_end_screen(screen)
+
 
             # rendering
             pg.display.flip()
             clock.tick(FPS)
+
 
     # calculates the coordinates from the clicked box
     def calculate_box(self, position):
@@ -98,15 +92,12 @@ class tictactoe:
 
     # checks if moves are still possible
     def turns_left(self):
-        for row in range(3):
-            for col in range(3):
-                if self.board[row][col] == '':
-                    return True
-        return False
+        return any('' in row for row in self.board)
 
 
-    # checks if game ends by a win or loss
-    def game_ends(self):
+    # checks if game ends by a tie, win or loss
+    def check_game_result(self):
+
         # diagonal strings
         diagonal_left = ''.join(self.board[i][i] for i in range(3))
         diagonal_right = ''.join(self.board[i][2 - i] for i in range(3))
@@ -115,11 +106,59 @@ class tictactoe:
             for col in range(3):
                 col_values = ''.join(self.board[row][c] for c in range(3))
                 row_values = ''.join(self.board[r][col] for r in range(3))
-                if row_values == 'XXX' or col_values == 'XXX' or diagonal_left == 'XXX' or diagonal_right == 'XXX':
-                    return 1
-                elif row_values == 'OOO' or col_values == 'OOO' or diagonal_left == 'OOO' or diagonal_right == 'OOO':
-                    return 2
-        return 0
+                if 'XXX' in (row_values, col_values, diagonal_left, diagonal_right):
+                    # player won
+                    self.result = 1
+                    self.state = "game_over"
+                    return
+                elif 'OOO' in (row_values, col_values, diagonal_left, diagonal_right):
+                    # computer won
+                    self.result = 2
+                    self.state = "game_over"
+                    return
+
+        # game is a tie
+        if not self.turns_left():
+            self.result = 0
+            self.state = "game_over"
+
+
+    def draw_board(self, screen):
+        # fill background and draw tictactoe-field
+        screen.fill("white")
+        for i in range(1, 3):
+            pg.draw.line(screen, "black", (WIDTH * i / 3, 0), (WIDTH * i / 3, HEIGHT))
+            pg.draw.line(screen, "black", (0, HEIGHT * i / 3), (WIDTH, HEIGHT * i / 3))
+
+        # draw crosses and circles
+        for row in range(3):
+            for col in range(3):
+                if self.board[row][col] == 'O':
+                    # draw circle
+                    circle_size = WIDTH / 8
+                    pg.draw.circle(screen, "black", ((WIDTH * col / 3) + WIDTH / 6, (HEIGHT * row / 3) + HEIGHT / 6), circle_size)
+                    pg.draw.circle(screen, "white", ((WIDTH * col / 3) + WIDTH / 6, (HEIGHT * row / 3) + HEIGHT / 6), circle_size - 1)
+                elif self.board[row][col] == 'X':
+                    # draw cross
+                    offset = WIDTH / 12
+                    pg.draw.line(screen, "black", (WIDTH * col / 3 + offset, HEIGHT * row / 3 + offset), (WIDTH * col / 3 + offset * 3, HEIGHT * row / 3 + offset * 3))
+                    pg.draw.line(screen, "black", (WIDTH * col / 3 + offset, HEIGHT * row / 3 + offset * 3), (WIDTH * col / 3 + offset * 3, HEIGHT * row / 3 + offset))
+
+
+    def draw_end_screen(self, screen):
+        # fonts
+        font = pg.font.Font(None, 100)
+        font_small = pg.font.Font(None, 40)
+
+        # texts
+        text_type = ["It's a Tie!", "You Won!", "You Lost!"]
+        text = font.render(text_type[self.result], True, "black")
+        text_klick = font_small.render("Click anywhere to start again", True, "black")
+        
+        # draw screen and texts
+        screen.fill("white")
+        screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//2 - text.get_height() * 3))
+        screen.blit(text_klick, (WIDTH//2 - text.get_width() * 0.6, HEIGHT//2 - text.get_height()))
 
 
     # reset board
