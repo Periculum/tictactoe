@@ -2,15 +2,27 @@
 
 import pygame as pg
 import random
+from enum import Enum
 
 HEIGHT = WIDTH = 600
 FPS = 60
 
+class State(Enum):
+    GAME_OVER = 0
+    PLAYERS_TURN = 1
+    COMPUTERS_TURN = 2
+
+class Result(Enum):
+    TIE = 0
+    PLAYER_WON = 1
+    COMPUTER_WON = 2
+
 class tictactoe:
     def __init__(self):
         self.board = self.reset_board()
-        self.state = "running" # can be "running" or "game_over"
-        self.result = 0 # 0 = tie, 1 = player won, 2 = computer won
+        # controls who starts the game and the result
+        self.result = Result.TIE
+        self.state = State.PLAYERS_TURN
 
     def runGame(self):
         pg.init()
@@ -19,9 +31,7 @@ class tictactoe:
         screen = pg.display.set_mode((WIDTH,HEIGHT))
         clock = pg.time.Clock()
 
-        # controls who starts the game
-        players_turn = True
-
+        # main loop
         while True:
             # player inputs
             for event in pg.event.get():
@@ -30,31 +40,28 @@ class tictactoe:
                     pg.quit()
                     raise SystemExit
 
-                if self.state == "running":
-                    # player makes a move
-                    if event.type == pg.MOUSEBUTTONDOWN and players_turn:
-                        # find coordinates from the box that got clicked
-                        box_coordinates = self.calculate_box(pg.mouse.get_pos())
-                        # check if box is empty and set cross
-                        if self.board[box_coordinates[0]][box_coordinates[1]] == '':
-                            self.board[box_coordinates[0]][box_coordinates[1]] = 'X'
-                            self.check_game_result()
-                            # switch to computers turn
-                            players_turn = False
-                    # Computers turn, if possible he makes a move
-                    # must be elif, because with if, the computer would have a turn even when player won in the move before
-                    elif self.turns_left() and not players_turn:
-                        self.random_move()
+                # players move
+                if self.state == State.PLAYERS_TURN and event.type == pg.MOUSEBUTTONDOWN:
+                    # find coordinates from the box that got clicked
+                    box_coordinates = self.calculate_box(pg.mouse.get_pos())
+                    # check if box is empty and set cross
+                    if self.board[box_coordinates[0]][box_coordinates[1]] == '':
+                        self.board[box_coordinates[0]][box_coordinates[1]] = 'X'
+                        # switch to computers turn
+                        self.state = State.COMPUTERS_TURN
                         self.check_game_result()
-                        # players move again
-                        players_turn = True
+                # if possible Computer makes a move
+                # must be elif, because with if, the computer could move even when player won in the move before
+                elif self.turns_left() and self.state == State.COMPUTERS_TURN:
+                    self.random_move()
+                    # players move again
+                    self.state = State.PLAYERS_TURN
+                    self.check_game_result()
                 # if game is over show endscreen and reset board
-                elif self.state == "game_over":
-                    if event.type  == pg.MOUSEBUTTONDOWN:
-                        # reset everything
-                        self.board = self.reset_board()  
-                        self.state = "running"
-                        players_turn = True
+                elif self.state == State.GAME_OVER and event.type == pg.MOUSEBUTTONDOWN:
+                    # reset everything
+                    self.board = self.reset_board()  
+                    self.state = State.PLAYERS_TURN
            
             
             # draws tictactoe board, crosses and circles              
@@ -62,7 +69,7 @@ class tictactoe:
                 
 
             # if game ends draw endscreen
-            if self.state == "game_over":
+            if self.state == State.GAME_OVER:
                 pg.time.delay(200)
                 self.draw_end_screen(screen)
 
@@ -96,30 +103,30 @@ class tictactoe:
 
     # checks if game ends by a tie, win or loss
     def check_game_result(self):
-
         # diagonal strings
         diagonal_left = ''.join(self.board[i][i] for i in range(3))
         diagonal_right = ''.join(self.board[i][2 - i] for i in range(3))
+        # row and columns
         for row in range(3):
             for col in range(3):
-                # row and columns
                 col_values = ''.join(self.board[row][c] for c in range(3))
                 row_values = ''.join(self.board[r][col] for r in range(3))
                 if 'XXX' in (row_values, col_values, diagonal_left, diagonal_right):
                     # player won
-                    self.result = 1
-                    self.state = "game_over"
+                    self.result = Result.PLAYER_WON
+                    self.state = State.GAME_OVER
                     return
                 elif 'OOO' in (row_values, col_values, diagonal_left, diagonal_right):
                     # computer won
-                    self.result = 2
-                    self.state = "game_over"
+                    self.result = Result.COMPUTER_WON
+                    self.state = State.GAME_OVER
                     return
 
         # game is a tie
         if not self.turns_left():
-            self.result = 0
-            self.state = "game_over"
+            self.result = Result.TIE
+            self.state = State.GAME_OVER
+            
 
 
     def draw_board(self, screen):
@@ -151,7 +158,7 @@ class tictactoe:
 
         # texts
         text_type = ["It's a Tie!", "You Won!", "You Lost!"]
-        text = font.render(text_type[self.result], True, "black")
+        text = font.render(text_type[self.result.value], True, "black")
         text_klick = font_small.render("Click anywhere to start again", True, "black")
         
         # draw screen and texts
