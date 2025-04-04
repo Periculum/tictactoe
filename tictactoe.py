@@ -5,7 +5,7 @@ import random
 from enum import Enum
 
 HEIGHT = WIDTH = 600
-FPS = 60
+FPS = 24
 
 class State(Enum):
     GAME_OVER = 0
@@ -41,53 +41,53 @@ class tictactoe:
                     raise SystemExit
 
                 # players move
-                if self.state == State.PLAYERS_TURN and event.type == pg.MOUSEBUTTONDOWN:
-                    # find coordinates from the box that got clicked
-                    box_coordinates = self.calculate_box(pg.mouse.get_pos())
-                    # check if box is empty and set cross
-                    if self.board[box_coordinates[0]][box_coordinates[1]] == '':
-                        self.board[box_coordinates[0]][box_coordinates[1]] = 'X'
-                        # switch to computers turn
-                        self.state = State.COMPUTERS_TURN
-                        # check if game is over
+                if self.state == State.PLAYERS_TURN:
+                    if event.type == pg.MOUSEBUTTONDOWN:
+                        # find coordinates from the box that got clicked
+                        box_coordinates = self.calculate_box(pg.mouse.get_pos())
+                        # check if box is empty and set cross
+                        if self.board[box_coordinates[0]][box_coordinates[1]] == '':
+                            self.board[box_coordinates[0]][box_coordinates[1]] = 'X'
+                            # switch to computers turn
+                            self.state = State.COMPUTERS_TURN
+                            result = self.check_game_result()
+                            if result == 'X':
+                                self.result = Result.PLAYER_WON
+                                self.state = State.GAME_OVER
+                            elif result == '-':
+                                self.result = Result.TIE
+                                self.state = State.GAME_OVER
+                # if possible Computer makes a move
+                # must be elif, because with if, the computer could move even when player won in the move before
+                elif self.state == State.COMPUTERS_TURN:
+                    if self.turns_left():
+                        # self.random_move()
+                        self.best_move()
+                        # players move again
+                        self.state = State.PLAYERS_TURN
                         result = self.check_game_result()
-                        if result == 'X':
-                            self.result = Result.PLAYER_WON
+                        if result == 'O':
+                            self.result = Result.COMPUTER_WON
                             self.state = State.GAME_OVER
                         elif result == '-':
                             self.result = Result.TIE
                             self.state = State.GAME_OVER
-                # if possible Computer makes a move
-                # must be elif, because with if, the computer could move even when player won in the move before
-                elif self.turns_left() and self.state == State.COMPUTERS_TURN:
-                    #self.random_move()
-                    self.best_move()
-                    # players move again
-                    self.state = State.PLAYERS_TURN
-                    # check if game is over
-                    result = self.check_game_result()
-                    if result == 'O':
-                        self.result = Result.COMPUTER_WON
-                        self.state = State.GAME_OVER
-                    elif result == '-':
+                # Game is over
+                elif self.state == State.GAME_OVER:
+                    # if player decides to play further
+                    if event.type == pg.MOUSEBUTTONDOWN:
+                        # game starts again so reset everything
+                        self.board = self.reset_board()  
+                        self.state = State.PLAYERS_TURN
                         self.result = Result.TIE
-                        self.state = State.GAME_OVER
-                # if game is over show endscreen and reset board
-                elif self.state == State.GAME_OVER and event.type == pg.MOUSEBUTTONDOWN:
-                    # reset everything
-                    self.board = self.reset_board()  
-                    self.state = State.PLAYERS_TURN
-           
-            
-            # draws tictactoe board, crosses and circles              
+                      
+            # draws tictactoe board, crosses and circles          
             self.draw_board(screen)
-                
 
             # if game ends draw endscreen
             if self.state == State.GAME_OVER:
-                pg.time.delay(200)
+                pg.time.delay(700)
                 self.draw_end_screen(screen)
-
 
             # rendering
             pg.display.flip()
@@ -111,7 +111,7 @@ class tictactoe:
                 return
 
 
-    # computer does move accordingly to the minimax algorithm
+   # computer does move accordingly to the minimax algorithm
     def best_move(self):
         best_eval = 0
         best_move = (0,0)
@@ -132,7 +132,6 @@ class tictactoe:
         # computer makes the best move
         print(best_move)
         self.board[best_move[0]][best_move[1]] = 'O'
-
 
 
     def minimax_search(self, board, max_player):
@@ -163,7 +162,7 @@ class tictactoe:
                 board[move[0]][move[1]] = ''
                 min_evaluation = min(min_evaluation, evaluation)
             return min_evaluation
-
+            
 
     def possible_moves(self, board):
         list_of_moves = []
@@ -173,7 +172,6 @@ class tictactoe:
                     list_of_moves.append((row,col))
 
         return list_of_moves
-
 
 
     # checks if moves are still possible
@@ -196,11 +194,12 @@ class tictactoe:
                     return 'X'
                 elif 'OOO' in (row_values, col_values, diagonal_left, diagonal_right):
                     # computer won
+                    self.result = Result.COMPUTER_WON
                     return 'O'
-
-        # game is a tie
+        # tie
         if not self.turns_left():
-            return '-'
+            self.result = Result.TIE
+            return  '-'
             
 
 
@@ -244,7 +243,8 @@ class tictactoe:
 
     # reset board
     def reset_board(self):
-        return [['','',''],['','',''],['','','']]
+        board = [['','',''],['','',''],['','','']]
+        return board
 
 
 def main():
