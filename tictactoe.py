@@ -17,7 +17,7 @@ class Result(Enum):
     PLAYER_WON = 1
     COMPUTER_WON = 2
 
-class tictactoe:
+class TicTacToe:
     def __init__(self):
         self.board = self.reset_board()
         # controls who starts the game and the result
@@ -50,26 +50,24 @@ class tictactoe:
                             self.board[box_coordinates[0]][box_coordinates[1]] = 'X'
                             # switch to computers turn
                             self.state = State.COMPUTERS_TURN
-                            result = self.check_game_result()
-                            if result == 'X':
+                            if self.check_game_result(self.board) != 0:
                                 self.result = Result.PLAYER_WON
                                 self.state = State.GAME_OVER
-                            elif result == '-':
+                            elif not self.turns_left(self.board):
                                 self.result = Result.TIE
                                 self.state = State.GAME_OVER
                 # if possible Computer makes a move
                 # must be elif, because with if, the computer could move even when player won in the move before
                 elif self.state == State.COMPUTERS_TURN:
-                    if self.turns_left():
+                    if self.turns_left(self.board):
                         # self.random_move()
                         self.best_move()
                         # players move again
                         self.state = State.PLAYERS_TURN
-                        result = self.check_game_result()
-                        if result == 'O':
+                        if self.check_game_result(self.board) != 0:
                             self.result = Result.COMPUTER_WON
                             self.state = State.GAME_OVER
-                        elif result == '-':
+                        elif not self.turns_left(self.board):
                             self.result = Result.TIE
                             self.state = State.GAME_OVER
                 # Game is over
@@ -113,92 +111,89 @@ class tictactoe:
 
    # computer does move accordingly to the minimax algorithm
     def best_move(self):
-        best_eval = -1
-        best_move = (0,0)
+        best_eval = -2
+        best_move = 0
+        # copy board
+        board = list(self.board)
         # for every possible move find via minimax-search the evaluation
         # and choose at the end the best move
         for row in range(3):
             for col in range(3):
-                if self.board[row][col] == '':
-                    self.board[row][col] = 'O'
-                    evaluation = self.minimax_search(False)
-                    self.board[row][col] = ''
+                if board[row][col] == '':
+                    board[row][col] = 'O'
+                    evaluation = self.minimax_search(board, False)
+                    board[row][col] = ''
                     if evaluation > best_eval:
-                        print(evaluation, best_eval)
                         best_eval = evaluation
                         best_move = (row,col)
 
         # computer makes the best move
-        print(best_move)
         self.board[best_move[0]][best_move[1]] = 'O'
 
 
-    def minimax_search(self, max_player):
+    def minimax_search(self, board, max_player):
         # if game is conclusive stop search and return result
-        result = self.check_game_result()
-        if result == 'X':
-            return 1
-        elif result == 'O':
-            return -1
-        elif not self.turns_left():
+        result = self.check_game_result(board)
+        if result != 0:
+            # someone won
+            return result
+        elif not self.turns_left(board):
+            # tie
             return 0
 
         # if max players turn
         if max_player:
-            max_evaluation = -1
-            for move in self.possible_moves():
-                self.board[move[0]][move[1]] = 'O'
-                evaluation = self.minimax_search(False)
-                self.board[move[0]][move[1]] = ''
+            max_evaluation = -2
+            for move in self.possible_moves(board):
+                board[move[0]][move[1]] = 'O'
+                evaluation = self.minimax_search(board, False)
+                board[move[0]][move[1]] = ''
                 max_evaluation = max(max_evaluation, evaluation)
             return max_evaluation
         # else min players turn
         else:  
-            min_evaluation = 1
-            for move in self.possible_moves():
-                self.board[move[0]][move[1]] = 'X'
-                evaluation = self.minimax_search(True)
-                self.board[move[0]][move[1]] = ''
+            min_evaluation = 2
+            for move in self.possible_moves(board):
+                board[move[0]][move[1]] = 'X'
+                evaluation = self.minimax_search(board, True)
+                board[move[0]][move[1]] = ''
                 min_evaluation = min(min_evaluation, evaluation)
             return min_evaluation
 
-
-    def possible_moves(self):
+    # returns all possible moves
+    def possible_moves(self, board):
         list_of_moves = []
         for row in range(3):
             for col in range(3):
-                if self.board[row][col] == '':
+                if board[row][col] == '':
                     list_of_moves.append((row,col))
 
         return list_of_moves
 
 
     # checks if moves are still possible
-    def turns_left(self):
-        return any('' in row for row in self.board)
+    def turns_left(self, board):
+        return any('' in row for row in board)
 
 
     # checks if game ends by a tie, win or loss
-    def check_game_result(self):
+    def check_game_result(self, board):
         # diagonal strings
-        diagonal_left = ''.join(self.board[i][i] for i in range(3))
-        diagonal_right = ''.join(self.board[i][2 - i] for i in range(3))
+        diagonal_left = ''.join(board[i][i] for i in range(3))
+        diagonal_right = ''.join(board[i][2 - i] for i in range(3))
         # row and columns
         for i in range(3):
-            row_values = ''.join(self.board[i])
-            col_values = ''.join(self.board[r][i] for r in range(3))
+            row_values = ''.join(board[i])
+            col_values = ''.join(board[r][i] for r in range(3))
             if 'XXX' in (row_values, col_values, diagonal_left, diagonal_right):
                 # player won
-                return 'X'
+                return -1
             elif 'OOO' in (row_values, col_values, diagonal_left, diagonal_right):
                 # computer won
-                self.result = Result.COMPUTER_WON
-                return 'O'
-        # tie
-        if not self.turns_left():
-            self.result = Result.TIE
-            return '-'
-            
+                return 1
+
+        # no winner
+        return 0
 
 
     def draw_board(self, screen):
@@ -241,12 +236,12 @@ class tictactoe:
 
     # reset board
     def reset_board(self):
-        #return [['','',''],['','',''],['','','']]
-        return [['','','X'],['X','','O'],['O','O','X']] # position from infographic
+        return [['','',''],['','',''],['','','']]
+        #return [['','','X'],['X','','O'],['O','O','X']] # position from infographic
 
 
 def main():
-    ttt = tictactoe()
+    ttt = TicTacToe()
     ttt.runGame()
 
 
