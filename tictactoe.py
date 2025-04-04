@@ -113,19 +113,18 @@ class tictactoe:
 
    # computer does move accordingly to the minimax algorithm
     def best_move(self):
-        best_eval = 0
+        best_eval = -1
         best_move = (0,0)
-        # getting a copy of the board
-        board = list(self.board)
         # for every possible move find via minimax-search the evaluation
         # and choose at the end the best move
         for row in range(3):
             for col in range(3):
-                if board[row][col] == '':
-                    board[row][col] = 'O'
-                    evaluation = self.minimax_search(board, True)
-                    board[row][col] = ''
+                if self.board[row][col] == '':
+                    self.board[row][col] = 'O'
+                    evaluation = self.minimax_search(False)
+                    self.board[row][col] = ''
                     if evaluation > best_eval:
+                        print(evaluation, best_eval)
                         best_eval = evaluation
                         best_move = (row,col)
 
@@ -134,7 +133,7 @@ class tictactoe:
         self.board[best_move[0]][best_move[1]] = 'O'
 
 
-    def minimax_search(self, board, max_player):
+    def minimax_search(self, max_player):
         # if game is conclusive stop search and return result
         result = self.check_game_result()
         if result == 'X':
@@ -147,28 +146,28 @@ class tictactoe:
         # if max players turn
         if max_player:
             max_evaluation = -1
-            for move in self.possible_moves(board):
-                board[move[0]][move[1]] = 'O'
-                evaluation = self.minimax_search(board, False)
-                board[move[0]][move[1]] = ''
+            for move in self.possible_moves():
+                self.board[move[0]][move[1]] = 'O'
+                evaluation = self.minimax_search(False)
+                self.board[move[0]][move[1]] = ''
                 max_evaluation = max(max_evaluation, evaluation)
             return max_evaluation
         # else min players turn
         else:  
             min_evaluation = 1
-            for move in self.possible_moves(board):
-                board[move[0]][move[1]] = 'X'
-                evaluation = self.minimax_search(board, True)
-                board[move[0]][move[1]] = ''
+            for move in self.possible_moves():
+                self.board[move[0]][move[1]] = 'X'
+                evaluation = self.minimax_search(True)
+                self.board[move[0]][move[1]] = ''
                 min_evaluation = min(min_evaluation, evaluation)
             return min_evaluation
-            
 
-    def possible_moves(self, board):
+
+    def possible_moves(self):
         list_of_moves = []
         for row in range(3):
             for col in range(3):
-                if board[row][col] == '':
+                if self.board[row][col] == '':
                     list_of_moves.append((row,col))
 
         return list_of_moves
@@ -185,21 +184,20 @@ class tictactoe:
         diagonal_left = ''.join(self.board[i][i] for i in range(3))
         diagonal_right = ''.join(self.board[i][2 - i] for i in range(3))
         # row and columns
-        for row in range(3):
-            for col in range(3):
-                col_values = ''.join(self.board[row][c] for c in range(3))
-                row_values = ''.join(self.board[r][col] for r in range(3))
-                if 'XXX' in (row_values, col_values, diagonal_left, diagonal_right):
-                    # player won
-                    return 'X'
-                elif 'OOO' in (row_values, col_values, diagonal_left, diagonal_right):
-                    # computer won
-                    self.result = Result.COMPUTER_WON
-                    return 'O'
+        for i in range(3):
+            row_values = ''.join(self.board[i])
+            col_values = ''.join(self.board[r][i] for r in range(3))
+            if 'XXX' in (row_values, col_values, diagonal_left, diagonal_right):
+                # player won
+                return 'X'
+            elif 'OOO' in (row_values, col_values, diagonal_left, diagonal_right):
+                # computer won
+                self.result = Result.COMPUTER_WON
+                return 'O'
         # tie
         if not self.turns_left():
             self.result = Result.TIE
-            return  '-'
+            return '-'
             
 
 
@@ -243,8 +241,8 @@ class tictactoe:
 
     # reset board
     def reset_board(self):
-        board = [['','',''],['','',''],['','','']]
-        return board
+        #return [['','',''],['','',''],['','','']]
+        return [['','','X'],['X','','O'],['O','O','X']] # position from infographic
 
 
 def main():
