@@ -2,6 +2,7 @@
 
 import pygame as pg
 import random
+import math
 from enum import Enum
 
 HEIGHT = WIDTH = 600
@@ -23,6 +24,7 @@ class TicTacToe:
         # controls who starts the game and the result
         self.result = Result.TIE
         self.state = State.PLAYERS_TURN
+        self.counter = 0
 
     def runGame(self):
         pg.init()
@@ -77,7 +79,6 @@ class TicTacToe:
                         # game starts again so reset everything
                         self.board = self.reset_board()  
                         self.state = State.PLAYERS_TURN
-                        self.result = Result.TIE
                       
             # draws tictactoe board, crosses and circles          
             self.draw_board(screen)
@@ -111,8 +112,8 @@ class TicTacToe:
 
    # computer does move accordingly to the minimax algorithm
     def best_move(self):
-        best_eval = -2
-        best_move = 0
+        best_eval = -math.inf
+        best_move = (0,0)
         # copy board
         board = list(self.board)
         # for every possible move find via minimax-search the evaluation
@@ -121,7 +122,8 @@ class TicTacToe:
             for col in range(3):
                 if board[row][col] == '':
                     board[row][col] = 'O'
-                    evaluation = self.minimax_search(board, False)
+                    #evaluation = self.minimax_search(board, False)
+                    evaluation = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
                     board[row][col] = ''
                     if evaluation > best_eval:
                         best_eval = evaluation
@@ -129,9 +131,11 @@ class TicTacToe:
 
         # computer makes the best move
         self.board[best_move[0]][best_move[1]] = 'O'
+        print(self.counter)
 
 
     def minimax_search(self, board, max_player):
+        self.counter += 1
         # if game is conclusive stop search and return result
         result = self.check_game_result(board)
         if result != 0:
@@ -143,7 +147,7 @@ class TicTacToe:
 
         # if max players turn
         if max_player:
-            max_evaluation = -2
+            max_evaluation = -math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = 'O'
                 evaluation = self.minimax_search(board, False)
@@ -152,7 +156,7 @@ class TicTacToe:
             return max_evaluation
         # else min players turn
         else:  
-            min_evaluation = 2
+            min_evaluation = math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = 'X'
                 evaluation = self.minimax_search(board, True)
@@ -160,15 +164,46 @@ class TicTacToe:
                 min_evaluation = min(min_evaluation, evaluation)
             return min_evaluation
 
+
+    def minimax_alpha_beta_search(self, alpha, beta, board, max_player):
+        self.counter += 1
+        # if game is conclusive stop search and return result
+        result = self.check_game_result(board)
+        if result != 0:
+            # someone won
+            return result
+        elif not self.turns_left(board):
+            # tie
+            return 0
+
+        # if max players turn
+        if max_player:
+            max_evaluation = -math.inf
+            for move in self.possible_moves(board):
+                board[move[0]][move[1]] = 'O'
+                evaluation = self.minimax_alpha_beta_search(alpha, beta, board, False)
+                board[move[0]][move[1]] = ''
+                max_evaluation = max(max_evaluation, evaluation)
+                alpha = max(alpha, evaluation)
+                if beta <= alpha:
+                    break
+            return max_evaluation
+        # else min players turn
+        else:  
+            min_evaluation = math.inf
+            for move in self.possible_moves(board):
+                board[move[0]][move[1]] = 'X'
+                evaluation = self.minimax_alpha_beta_search(alpha, beta, board, True)
+                board[move[0]][move[1]] = ''
+                min_evaluation = min(min_evaluation, evaluation)
+                beta = min(beta, evaluation)
+                if beta <= alpha:
+                    break              
+            return min_evaluation    
+
     # returns all possible moves
     def possible_moves(self, board):
-        list_of_moves = []
-        for row in range(3):
-            for col in range(3):
-                if board[row][col] == '':
-                    list_of_moves.append((row,col))
-
-        return list_of_moves
+        return [(row, col) for row in range(3) for col in range(3) if board[row][col] == '']
 
 
     # checks if moves are still possible
