@@ -127,10 +127,10 @@ class TicTacToe:
             for col in range(3):
                 if board[row][col] == "":
                     board[row][col] = COMPUTER
-                    # score = self.minimax_search(board, False)
+                    score = self.minimax_search(board, False)
                     # score = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
-                    score = self.negamax_search(board, -1)
-                    board[row][col] = ""
+                    # score = self.negamax_search(board, -1)
+                    board[row][col] = EMPTY
                     if score > best_score:
                         best_score = score
                         best_move = (row, col)
@@ -154,7 +154,7 @@ class TicTacToe:
         if max_player:
             max_score = -math.inf
             for move in self.possible_moves(board):
-                board[move[0]][move[1]] = PLAYER
+                board[move[0]][move[1]] = COMPUTER
                 score = self.minimax_search(board, False)
                 board[move[0]][move[1]] = EMPTY
                 max_score = max(max_score, score)
@@ -163,7 +163,7 @@ class TicTacToe:
         else:
             min_score = math.inf
             for move in self.possible_moves(board):
-                board[move[0]][move[1]] = COMPUTER
+                board[move[0]][move[1]] = PLAYER
                 score = self.minimax_search(board, True)
                 board[move[0]][move[1]] = EMPTY
                 min_score = min(min_score, score)
@@ -184,7 +184,7 @@ class TicTacToe:
         if max_player:
             max_score = -math.inf
             for move in self.possible_moves(board):
-                board[move[0]][move[1]] = PLAYER
+                board[move[0]][move[1]] = COMPUTER
                 score = self.minimax_alpha_beta_search(alpha, beta, board, False)
                 board[move[0]][move[1]] = EMPTY
                 max_score = max(max_score, score)
@@ -196,7 +196,7 @@ class TicTacToe:
         else:
             min_score = math.inf
             for move in self.possible_moves(board):
-                board[move[0]][move[1]] = COMPUTER
+                board[move[0]][move[1]] = PLAYER
                 score = self.minimax_alpha_beta_search(alpha, beta, board, True)
                 board[move[0]][move[1]] = EMPTY
                 min_score = min(min_score, score)
