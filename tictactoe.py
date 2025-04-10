@@ -8,15 +8,23 @@ from enum import Enum
 HEIGHT = WIDTH = 600
 FPS = 24
 
+
 class State(Enum):
     GAME_OVER = 0
     PLAYERS_TURN = 1
     COMPUTERS_TURN = 2
 
+
 class Result(Enum):
     TIE = 0
     PLAYER_WON = 1
     COMPUTER_WON = 2
+
+
+EMPTY = ""
+PLAYER = "X"
+COMPUTER = "O"
+
 
 class TicTacToe:
     def __init__(self):
@@ -30,7 +38,7 @@ class TicTacToe:
         pg.init()
 
         # draw window screen
-        screen = pg.display.set_mode((WIDTH,HEIGHT))
+        screen = pg.display.set_mode((WIDTH, HEIGHT))
         clock = pg.time.Clock()
 
         # main loop
@@ -48,8 +56,8 @@ class TicTacToe:
                         # find coordinates from the box that got clicked
                         box_coordinates = self.calculate_box(pg.mouse.get_pos())
                         # check if box is empty and set cross
-                        if self.board[box_coordinates[0]][box_coordinates[1]] == '':
-                            self.board[box_coordinates[0]][box_coordinates[1]] = 'X'
+                        if self.board[box_coordinates[0]][box_coordinates[1]] == EMPTY:
+                            self.board[box_coordinates[0]][box_coordinates[1]] = PLAYER
                             # switch to computers turn
                             self.state = State.COMPUTERS_TURN
                             if self.check_game_result(self.board) != 0:
@@ -77,10 +85,10 @@ class TicTacToe:
                     # if player decides to play further
                     if event.type == pg.MOUSEBUTTONDOWN:
                         # game starts again so reset everything
-                        self.board = self.reset_board()  
+                        self.board = self.reset_board()
                         self.state = State.PLAYERS_TURN
-                      
-            # draws tictactoe board, crosses and circles          
+
+            # draws tictactoe board, crosses and circles
             self.draw_board(screen)
 
             # if game ends draw endscreen
@@ -92,48 +100,44 @@ class TicTacToe:
             pg.display.flip()
             clock.tick(FPS)
 
-
     # calculates the coordinates from the clicked box
     def calculate_box(self, position):
         # inverting the order of the coordinates to made them more logically readable
-        return (int(position[1] // (WIDTH/3)), int(position[0] // (HEIGHT/3)))
-
+        return (int(position[1] // (WIDTH / 3)), int(position[0] // (HEIGHT / 3)))
 
     # computer does a random move
     def random_move(self):
         while True:
             x = random.randint(0, 2)
             y = random.randint(0, 2)
-            if self.board[x][y] == '':
+            if self.board[x][y] == EMPTY:
                 # computer does a turn
-                self.board[x][y] = 'O'
+                self.board[x][y] = COMPUTER
                 return
 
-
-   # computer does move accordingly to the minimax algorithm
+    # computer does move accordingly to the minimax algorithm
     def best_move(self):
-        best_eval = -math.inf
-        best_move = (0,0)
+        best_score = -math.inf
+        best_move = (0, 0)
         # copy board
         board = list(self.board)
         # for every possible move find via minimax-search the evaluation
         # and choose at the end the best move
         for row in range(3):
             for col in range(3):
-                if board[row][col] == '':
-                    board[row][col] = 'O'
-                    #evaluation = self.minimax_search(board, False)
-                    #evaluation = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
-                    evaluation = self.negamax_search(board, -1)
-                    board[row][col] = ''
-                    if evaluation > best_eval:
-                        best_eval = evaluation
-                        best_move = (row,col)
+                if board[row][col] == "":
+                    board[row][col] = COMPUTER
+                    # evaluation = self.minimax_search(board, False)
+                    # evaluation = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
+                    score = self.negamax_search(board, -1)
+                    board[row][col] = ""
+                    if score > best_score:
+                        best_score = score
+                        best_move = (row, col)
 
         # computer makes the best move
-        self.board[best_move[0]][best_move[1]] = 'O'
+        self.board[best_move[0]][best_move[1]] = COMPUTER
         print(self.counter)
-
 
     def minimax_search(self, board, max_player):
         self.counter += 1
@@ -150,21 +154,20 @@ class TicTacToe:
         if max_player:
             max_evaluation = -math.inf
             for move in self.possible_moves(board):
-                board[move[0]][move[1]] = 'O'
-                evaluation = self.minimax_search(board, False)
-                board[move[0]][move[1]] = ''
-                max_evaluation = max(max_evaluation, evaluation)
+                board[move[0]][move[1]] = PLAYER
+                score = self.minimax_search(board, False)
+                board[move[0]][move[1]] = EMPTY
+                max_evaluation = max(max_evaluation, score)
             return max_evaluation
         # else min players turn
-        else:  
-            min_evaluation = math.inf
+        else:
+            min_score = math.inf
             for move in self.possible_moves(board):
-                board[move[0]][move[1]] = 'X'
-                evaluation = self.minimax_search(board, True)
-                board[move[0]][move[1]] = ''
-                min_evaluation = min(min_evaluation, evaluation)
-            return min_evaluation
-
+                board[move[0]][move[1]] = COMPUTER
+                score = self.minimax_search(board, True)
+                board[move[0]][move[1]] = EMPTY
+                min_score = min(min_score, score)
+            return min_score
 
     def minimax_alpha_beta_search(self, alpha, beta, board, max_player):
         self.counter += 1
@@ -181,27 +184,26 @@ class TicTacToe:
         if max_player:
             max_evaluation = -math.inf
             for move in self.possible_moves(board):
-                board[move[0]][move[1]] = 'O'
+                board[move[0]][move[1]] = PLAYER
                 evaluation = self.minimax_alpha_beta_search(alpha, beta, board, False)
-                board[move[0]][move[1]] = ''
+                board[move[0]][move[1]] = EMPTY
                 max_evaluation = max(max_evaluation, evaluation)
                 alpha = max(alpha, evaluation)
                 if beta <= alpha:
                     break
             return max_evaluation
         # else min players turn
-        else:  
+        else:
             min_evaluation = math.inf
             for move in self.possible_moves(board):
-                board[move[0]][move[1]] = 'X'
+                board[move[0]][move[1]] = COMPUTER
                 evaluation = self.minimax_alpha_beta_search(alpha, beta, board, True)
-                board[move[0]][move[1]] = ''
+                board[move[0]][move[1]] = EMPTY
                 min_evaluation = min(min_evaluation, evaluation)
                 beta = min(beta, evaluation)
                 if beta <= alpha:
-                    break              
+                    break
             return min_evaluation
-
 
     def negamax_search(self, board, color):
         self.counter += 1
@@ -216,45 +218,43 @@ class TicTacToe:
 
         max_score = -math.inf
         for move in self.possible_moves(board):
-            if color == -1:
-                board[move[0]][move[1]] = 'X'
+            if color == 1:
+                board[move[0]][move[1]] = COMPUTER
             else:
-                board[move[0]][move[1]] = 'O'
+                board[move[0]][move[1]] = PLAYER
             score = -self.negamax_search(board, -color)
             max_score = max(max_score, score)
-            board[move[0]][move[1]] = ''
+            board[move[0]][move[1]] = EMPTY
         return max_score
-
 
     # returns all possible moves
     def possible_moves(self, board):
-        return [(row, col) for row in range(3) for col in range(3) if board[row][col] == '']
-
+        return [
+            (row, col) for row in range(3) for col in range(3) if board[row][col] == ""
+        ]
 
     # checks if moves are still possible
     def turns_left(self, board):
-        return any('' in row for row in board)
-
+        return any("" in row for row in board)
 
     # checks if game ends by a tie, win or loss
     def check_game_result(self, board):
         # diagonal strings
-        diagonal_left = ''.join(board[i][i] for i in range(3))
-        diagonal_right = ''.join(board[i][2 - i] for i in range(3))
+        diagonal_left = "".join(board[i][i] for i in range(3))
+        diagonal_right = "".join(board[i][2 - i] for i in range(3))
         # row and columns
         for i in range(3):
-            row_values = ''.join(board[i])
-            col_values = ''.join(board[r][i] for r in range(3))
-            if 'XXX' in (row_values, col_values, diagonal_left, diagonal_right):
+            row_values = "".join(board[i])
+            col_values = "".join(board[r][i] for r in range(3))
+            if "XXX" in (row_values, col_values, diagonal_left, diagonal_right):
                 # player won
-                return -1
-            elif 'OOO' in (row_values, col_values, diagonal_left, diagonal_right):
-                # computer won
                 return 1
+            elif "OOO" in (row_values, col_values, diagonal_left, diagonal_right):
+                # computer won
+                return -1
 
         # no winner
         return 0
-
 
     def draw_board(self, screen):
         # fill background and draw tictactoe-field
@@ -266,17 +266,42 @@ class TicTacToe:
         # draw crosses and circles
         for row in range(3):
             for col in range(3):
-                if self.board[row][col] == 'O':
+                if self.board[row][col] == COMPUTER:
                     # draw circle
                     circle_size = WIDTH / 8
-                    pg.draw.circle(screen, "black", ((WIDTH * col / 3) + WIDTH / 6, (HEIGHT * row / 3) + HEIGHT / 6), circle_size)
-                    pg.draw.circle(screen, "white", ((WIDTH * col / 3) + WIDTH / 6, (HEIGHT * row / 3) + HEIGHT / 6), circle_size - 1)
-                elif self.board[row][col] == 'X':
+                    pg.draw.circle(
+                        screen,
+                        "black",
+                        (
+                            (WIDTH * col / 3) + WIDTH / 6,
+                            (HEIGHT * row / 3) + HEIGHT / 6,
+                        ),
+                        circle_size,
+                    )
+                    pg.draw.circle(
+                        screen,
+                        "white",
+                        (
+                            (WIDTH * col / 3) + WIDTH / 6,
+                            (HEIGHT * row / 3) + HEIGHT / 6,
+                        ),
+                        circle_size - 1,
+                    )
+                elif self.board[row][col] == PLAYER:
                     # draw cross
                     offset = WIDTH / 12
-                    pg.draw.line(screen, "black", (WIDTH * col / 3 + offset, HEIGHT * row / 3 + offset), (WIDTH * col / 3 + offset * 3, HEIGHT * row / 3 + offset * 3))
-                    pg.draw.line(screen, "black", (WIDTH * col / 3 + offset, HEIGHT * row / 3 + offset * 3), (WIDTH * col / 3 + offset * 3, HEIGHT * row / 3 + offset))
-
+                    pg.draw.line(
+                        screen,
+                        "black",
+                        (WIDTH * col / 3 + offset, HEIGHT * row / 3 + offset),
+                        (WIDTH * col / 3 + offset * 3, HEIGHT * row / 3 + offset * 3),
+                    )
+                    pg.draw.line(
+                        screen,
+                        "black",
+                        (WIDTH * col / 3 + offset, HEIGHT * row / 3 + offset * 3),
+                        (WIDTH * col / 3 + offset * 3, HEIGHT * row / 3 + offset),
+                    )
 
     def draw_end_screen(self, screen):
         # fonts
@@ -287,17 +312,22 @@ class TicTacToe:
         text_type = ["It's a Tie!", "You Won!", "You Lost!"]
         text = font.render(text_type[self.result.value], True, "black")
         text_klick = font_small.render("Click anywhere to start again", True, "black")
-        
+
         # draw screen and texts
         screen.fill("white")
-        screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//2 - text.get_height() * 3))
-        screen.blit(text_klick, (WIDTH//2 - text.get_width() * 0.6, HEIGHT//2 - text.get_height()))
-
+        screen.blit(
+            text,
+            (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() * 3),
+        )
+        screen.blit(
+            text_klick,
+            (WIDTH // 2 - text.get_width() * 0.6, HEIGHT // 2 - text.get_height()),
+        )
 
     # reset board
     def reset_board(self):
-        return [['','',''],['','',''],['','','']]
-        #return [['','','X'],['X','','O'],['O','O','X']] # position from infographic
+        return [[EMPTY for _ in range(3)] for _ in range(3)]
+        # return [['','','X'],['X','','O'],['O','O','X']] # position from infographic
 
 
 def main():
@@ -305,5 +335,5 @@ def main():
     ttt.runGame()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
