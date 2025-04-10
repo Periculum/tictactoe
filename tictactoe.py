@@ -123,7 +123,8 @@ class TicTacToe:
                 if board[row][col] == '':
                     board[row][col] = 'O'
                     #evaluation = self.minimax_search(board, False)
-                    evaluation = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
+                    #evaluation = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
+                    evaluation = self.negamax_search(board, -1)
                     board[row][col] = ''
                     if evaluation > best_eval:
                         best_eval = evaluation
@@ -136,7 +137,7 @@ class TicTacToe:
 
     def minimax_search(self, board, max_player):
         self.counter += 1
-        # if game is conclusive stop search and return result
+        # if game is finished stop search and return result
         result = self.check_game_result(board)
         if result != 0:
             # someone won
@@ -167,7 +168,7 @@ class TicTacToe:
 
     def minimax_alpha_beta_search(self, alpha, beta, board, max_player):
         self.counter += 1
-        # if game is conclusive stop search and return result
+        # if game is finished stop search and return result
         result = self.check_game_result(board)
         if result != 0:
             # someone won
@@ -199,7 +200,31 @@ class TicTacToe:
                 beta = min(beta, evaluation)
                 if beta <= alpha:
                     break              
-            return min_evaluation    
+            return min_evaluation
+
+
+    def negamax_search(self, board, color):
+        self.counter += 1
+        # if game is finished stop search and return result
+        result = self.check_game_result(board)
+        if result != 0:
+            # someone won
+            return result * color
+        elif not self.turns_left(board):
+            # tie
+            return 0
+
+        max_score = -math.inf
+        for move in self.possible_moves(board):
+            if color == -1:
+                board[move[0]][move[1]] = 'X'
+            else:
+                board[move[0]][move[1]] = 'O'
+            score = -self.negamax_search(board, -color)
+            max_score = max(max_score, score)
+            board[move[0]][move[1]] = ''
+        return max_score
+
 
     # returns all possible moves
     def possible_moves(self, board):
