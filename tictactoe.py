@@ -248,10 +248,10 @@ class TicTacToe:
             col_values = "".join(board[r][i] for r in range(3))
             if "XXX" in (row_values, col_values, diagonal_left, diagonal_right):
                 # player won
-                return 1
+                return -1
             elif "OOO" in (row_values, col_values, diagonal_left, diagonal_right):
                 # computer won
-                return -1
+                return 1
 
         # no winner
         return 0
