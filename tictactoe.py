@@ -100,7 +100,7 @@ class TicTacToe:
             pg.display.flip()
             clock.tick(FPS)
 
-    # calculates the coordinates from the clicked box
+    # calculate the coordinates from the clicked box
     def calculate_box(self, position):
         # inverting the order of the coordinates to made them more logically readable
         return (int(position[1] // (WIDTH / 3)), int(position[0] // (HEIGHT / 3)))
@@ -115,20 +115,20 @@ class TicTacToe:
                 self.board[x][y] = COMPUTER
                 return
 
-    # computer does move accordingly to the minimax algorithm
+    # computer does move according to the minimax/negamax algorithm
     def best_move(self):
         best_score = -math.inf
         best_move = (0, 0)
         # copy board
         board = list(self.board)
-        # for every possible move find via minimax-search the evaluation
-        # and choose at the end the best move
+        # Evaluate all possible moves and find the best one
+        # using negamax search to determine optimal play
         for row in range(3):
             for col in range(3):
                 if board[row][col] == "":
                     board[row][col] = COMPUTER
-                    # evaluation = self.minimax_search(board, False)
-                    # evaluation = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
+                    # score = self.minimax_search(board, False)
+                    # score = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
                     score = self.negamax_search(board, -1)
                     board[row][col] = ""
                     if score > best_score:
@@ -152,13 +152,13 @@ class TicTacToe:
 
         # if max players turn
         if max_player:
-            max_evaluation = -math.inf
+            max_score = -math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = PLAYER
                 score = self.minimax_search(board, False)
                 board[move[0]][move[1]] = EMPTY
-                max_evaluation = max(max_evaluation, score)
-            return max_evaluation
+                max_score = max(max_score, score)
+            return max_score
         # else min players turn
         else:
             min_score = math.inf
@@ -182,28 +182,28 @@ class TicTacToe:
 
         # if max players turn
         if max_player:
-            max_evaluation = -math.inf
+            max_score = -math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = PLAYER
-                evaluation = self.minimax_alpha_beta_search(alpha, beta, board, False)
+                score = self.minimax_alpha_beta_search(alpha, beta, board, False)
                 board[move[0]][move[1]] = EMPTY
-                max_evaluation = max(max_evaluation, evaluation)
-                alpha = max(alpha, evaluation)
+                max_score = max(max_score, score)
+                alpha = max(alpha, score)
                 if beta <= alpha:
                     break
-            return max_evaluation
+            return max_score
         # else min players turn
         else:
-            min_evaluation = math.inf
+            min_score = math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = COMPUTER
-                evaluation = self.minimax_alpha_beta_search(alpha, beta, board, True)
+                score = self.minimax_alpha_beta_search(alpha, beta, board, True)
                 board[move[0]][move[1]] = EMPTY
-                min_evaluation = min(min_evaluation, evaluation)
-                beta = min(beta, evaluation)
+                min_score = min(min_score, score)
+                beta = min(beta, score)
                 if beta <= alpha:
                     break
-            return min_evaluation
+            return min_score
 
     def negamax_search(self, board, color):
         self.counter += 1
