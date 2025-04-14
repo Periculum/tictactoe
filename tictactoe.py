@@ -16,6 +16,24 @@ class Mode(Enum):
     NEGAMAX = 2
     MINIMAX_AB = 3
 
+    def new(mode):
+        if isinstance(mode, int):
+            return Mode(mode)
+        elif isinstance(mode, str):
+            mode = mode.lower()
+            if mode == "random":
+                return Mode.RANDOM
+            elif mode == "minimax":
+                return Mode.MINIMAX
+            elif mode == "negamax":
+                return Mode.NEGAMAX
+            elif mode == "minimax-ab":
+                return Mode.MINIMAX_AB
+            else:
+                raise ValueError(f"Invalid mode: {mode}")
+        else:
+            raise TypeError(f"Mode must be int or str, not {type(mode).__name__}")
+
 
 class State(Enum):
     GAME_OVER = 0
@@ -359,11 +377,10 @@ def main():
     parser = ArgumentParser(
         prog='Tic Tac Toe',
         description='Small Pygame with different Computer enemys')
-    parser.add_argument('-m', '--mode', type=int, choices=range(4), default=3,
-        help="0 = Random; 1 = Minimax; 2 = Negamax, 3 = Minimax with Alpha/Beta pruning")
+    parser.add_argument('-m', '--mode', type=str, choices=["random", "minimax", "minimax-ab", "negamax"], default= "minimax-ab")
     args = parser.parse_args()
 
-    ttt = TicTacToe(args.mode)
+    ttt = TicTacToe(Mode.new(args.mode))
     ttt.runGame()
 
 
