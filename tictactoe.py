@@ -45,34 +45,37 @@ class TicTacToe:
         updateDelay = 0
         
         # main loop
-        while True:
-            # player inputs
-            event = pg.event.poll()
-            if event.type == pg.QUIT:
-                pg.quit()
-                raise SystemExit
-
-            # player's move
-            if self.state == State.PLAYERS_TURN:
+        running = True
+        while running:
+            # Clear event queue at the start of each frame
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    running = False
+                
+                # Handle mouse clicks in appropriate states
                 if event.type == pg.MOUSEBUTTONDOWN:
-                    # find coordinates from the box that got clicked
-                    box_coordinates = self.calculate_box(pg.mouse.get_pos())
-                    # check if box is empty and set cross
-                    if self.board[box_coordinates[0]][box_coordinates[1]] == EMPTY:
-                        self.board[box_coordinates[0]][box_coordinates[1]] = PLAYER
-                        # switch to computers turn
-                        self.state = State.COMPUTERS_TURN
-                        if self.check_game_result(self.board) != 0:
-                            self.result = Result.PLAYER_WON
-                            self.state = State.GAME_OVER
-                        elif not self.turns_left(self.board):
-                            self.result = Result.TIE
-                            self.state = State.GAME_OVER
-                    updateDelay = time.time() + 0.7
-                self.updateBoardDisplay()
-            # if possible Computer makes a move
-            # must be elif, because with if, the computer could move even when player won in the move before
-            elif self.state == State.COMPUTERS_TURN:
+                    if self.state == State.PLAYERS_TURN:
+                        # find coordinates from the box that got clicked
+                        box_coordinates = self.calculate_box(pg.mouse.get_pos())
+                        # check if box is empty and set cross
+                        if self.board[box_coordinates[0]][box_coordinates[1]] == EMPTY:
+                            self.board[box_coordinates[0]][box_coordinates[1]] = PLAYER
+                            # switch to computers turn
+                            self.state = State.COMPUTERS_TURN
+                            if self.check_game_result(self.board) != 0:
+                                self.result = Result.PLAYER_WON
+                                self.state = State.GAME_OVER
+                            elif not self.turns_left(self.board):
+                                self.result = Result.TIE
+                                self.state = State.GAME_OVER
+                            updateDelay = time.time() + 0.7
+                    elif self.state == State.GAME_OVER:
+                        # game starts again so reset everything
+                        self.board = self.reset_board()
+                        self.state = State.PLAYERS_TURN
+
+            # State-specific updates (outside of event handling)
+            if self.state == State.COMPUTERS_TURN:
                 if self.turns_left(self.board):
                     # self.random_move()
                     self.best_move()
@@ -85,19 +88,18 @@ class TicTacToe:
                         self.result = Result.TIE
                         self.state = State.GAME_OVER
                     updateDelay = time.time() + 0.7
+
+            # Game over state handling
+            if self.state == State.GAME_OVER and time.time() > updateDelay:
+                self.draw_end_screen(self.screen)
+            else:
                 self.updateBoardDisplay()
-            # Game is over
-            elif self.state == State.GAME_OVER:
-                print(time.time(), updateDelay)
-                if time.time() > updateDelay:
-                    self.draw_end_screen(self.screen)
-                    pg.display.flip()
-                    self.clock.tick(FPS)
-                # if player decides to play again
-                if event.type == pg.MOUSEBUTTONDOWN:
-                    # game starts again so reset everything
-                    self.board = self.reset_board()
-                    self.state = State.PLAYERS_TURN
+
+            pg.display.flip()
+            self.clock.tick(FPS)
+
+        # Properly quit pygame when the loop ends
+        pg.quit()
 
 
 
