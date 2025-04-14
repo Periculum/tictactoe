@@ -39,9 +39,9 @@ class TicTacToe:
         pg.init()
 
         # draw window screen
-        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        screen = pg.display.set_mode((WIDTH, HEIGHT))
         pg.display.set_caption("Tic Tac Toe")
-        self.clock = pg.time.Clock()
+        clock = pg.time.Clock()
         updateDelay = 0
         
         # main loop
@@ -91,12 +91,12 @@ class TicTacToe:
 
             # Game over state handling
             if self.state == State.GAME_OVER and time.time() > updateDelay:
-                self.draw_end_screen(self.screen)
+                self.draw_end_screen(screen)
             else:
-                self.draw_board(self.screen)
+                self.draw_board(screen)
 
             pg.display.flip()
-            self.clock.tick(FPS)
+            clock.tick(FPS)
 
         # Properly quit pygame when the loop ends
         pg.quit()
