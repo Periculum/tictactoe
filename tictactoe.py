@@ -5,6 +5,7 @@ import random
 import math
 import time
 from enum import Enum
+from argparse import ArgumentParser
 
 HEIGHT = WIDTH = 600
 FPS = 24
@@ -34,21 +35,20 @@ COMPUTER = "O"
 
 
 class TicTacToe:
-    def __init__(self):
+    def __init__(self, mode):
         self.board = self.reset_board()
-        # controls who starts the game and the result
         self.result = Result.TIE
         self.state = State.PLAYERS_TURN
-        self.mode = Mode.MINIMAX_AB
+        self.mode = Mode(mode)
         self.counter = 0
 
     def runGame(self):
         pg.init()
 
         # draw window screen
-        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        screen = pg.display.set_mode((WIDTH, HEIGHT))
         pg.display.set_caption("Tic Tac Toe")
-        self.clock = pg.time.Clock()
+        clock = pg.time.Clock()
         updateDelay = 0
         
         # main loop
@@ -93,25 +93,19 @@ class TicTacToe:
                     elif not self.turns_left(self.board):
                         self.result = Result.TIE
                         self.state = State.GAME_OVER
-                    updateDelay = time.time() + 0.7
+                    updateDelay = time.time() + 0.5
 
             # Game over state handling
             if self.state == State.GAME_OVER and time.time() > updateDelay:
-                self.draw_end_screen(self.screen)
+                self.draw_end_screen(screen)
             else:
-                self.updateBoardDisplay()
+                self.draw_board(screen)
 
             pg.display.flip()
-            self.clock.tick(FPS)
+            clock.tick(FPS)
 
         # Properly quit pygame when the loop ends
         pg.quit()
-
-
-    def updateBoardDisplay(self):
-        self.draw_board(self.screen)
-        pg.display.flip()
-        self.clock.tick(FPS)
 
 
     # calculate box coordinates from screen coordinates
@@ -361,7 +355,15 @@ class TicTacToe:
 
 
 def main():
-    ttt = TicTacToe()
+    # parsing arguments
+    parser = ArgumentParser(
+        prog='Tic Tac Toe',
+        description='Small Pygame with different Computer enemys')
+    parser.add_argument('-m', '--mode', type=int, choices=range(4), default=3,
+        help="0 = Random; 1 = Minimax; 2 = Negamax, 3 = Minimax with Alpha/Beta pruning")
+    args = parser.parse_args()
+
+    ttt = TicTacToe(args.mode)
     ttt.runGame()
 
 
