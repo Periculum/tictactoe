@@ -9,6 +9,12 @@ from enum import Enum
 HEIGHT = WIDTH = 600
 FPS = 24
 
+class Mode(Enum):
+    RANDOM = 0
+    MINIMAX = 1
+    NEGAMAX = 2
+    MINIMAX_AB = 3
+
 
 class State(Enum):
     GAME_OVER = 0
@@ -33,6 +39,7 @@ class TicTacToe:
         # controls who starts the game and the result
         self.result = Result.TIE
         self.state = State.PLAYERS_TURN
+        self.mode = Mode.MINIMAX_AB
         self.counter = 0
 
     def runGame(self):
@@ -45,17 +52,16 @@ class TicTacToe:
         updateDelay = 0
         
         # main loop
-        while True:
-            # player inputs
+        running = True
+        while running:
+            # Clear event queue at the start of each frame
             for event in pg.event.get():
-                # close game
                 if event.type == pg.QUIT:
-                    pg.quit()
-                    raise SystemExit
-
-                # player's move
-                if self.state == State.PLAYERS_TURN:
-                    if event.type == pg.MOUSEBUTTONDOWN:
+                    running = False
+                
+                # Handle mouse clicks in appropriate states
+                if event.type == pg.MOUSEBUTTONDOWN:
+                    if self.state == State.PLAYERS_TURN:
                         # find coordinates from the box that got clicked
                         box_coordinates = self.calculate_box(pg.mouse.get_pos())
                         # check if box is empty and set cross
@@ -70,34 +76,36 @@ class TicTacToe:
                                 self.result = Result.TIE
                                 self.state = State.GAME_OVER
                             updateDelay = time.time() + 0.7
-                    self.updateBoardDisplay()
-                # if possible Computer makes a move
-                # must be elif, because with if, the computer could move even when player won in the move before
-                elif self.state == State.COMPUTERS_TURN:
-                    if self.turns_left(self.board):
-                        # self.random_move()
-                        self.best_move()
-                        # players move again
-                        self.state = State.PLAYERS_TURN
-                        if self.check_game_result(self.board) != 0:
-                            self.result = Result.COMPUTER_WON
-                            self.state = State.GAME_OVER
-                        elif not self.turns_left(self.board):
-                            self.result = Result.TIE
-                            self.state = State.GAME_OVER
-                        updateDelay = time.time() + 0.7
-                    self.updateBoardDisplay()
-                # Game is over
-                elif self.state == State.GAME_OVER:
-                    if time.time() > updateDelay:
-                        self.draw_end_screen(self.screen)
-                        pg.display.flip()
-                    # if player decides to play again
-                    if event.type == pg.MOUSEBUTTONDOWN:
+                    elif self.state == State.GAME_OVER:
                         # game starts again so reset everything
                         self.board = self.reset_board()
                         self.state = State.PLAYERS_TURN
 
+            # State-specific updates (outside of event handling)
+            if self.state == State.COMPUTERS_TURN:
+                if self.turns_left(self.board):
+                    self.computer_makes_a_move()
+                    # players move again
+                    self.state = State.PLAYERS_TURN
+                    if self.check_game_result(self.board) != 0:
+                        self.result = Result.COMPUTER_WON
+                        self.state = State.GAME_OVER
+                    elif not self.turns_left(self.board):
+                        self.result = Result.TIE
+                        self.state = State.GAME_OVER
+                    updateDelay = time.time() + 0.7
+
+            # Game over state handling
+            if self.state == State.GAME_OVER and time.time() > updateDelay:
+                self.draw_end_screen(self.screen)
+            else:
+                self.updateBoardDisplay()
+
+            pg.display.flip()
+            self.clock.tick(FPS)
+
+        # Properly quit pygame when the loop ends
+        pg.quit()
 
 
     def updateBoardDisplay(self):
@@ -111,13 +119,20 @@ class TicTacToe:
     def calculate_box(self, position):
         return (int(position[1] // (WIDTH / 3)), int(position[0] // (HEIGHT / 3)))
 
+    # computers move based on the selected game mode
+    def computer_makes_a_move(self):
+        if self.mode == Mode.RANDOM:
+            self.random_move()
+        else:
+            self.best_move()
+
     # computer does a random move
     def random_move(self):
         while True:
             x = random.randint(0, 2)
             y = random.randint(0, 2)
+            # if the cell is empty, make the move and exit the loop
             if self.board[x][y] == EMPTY:
-                # computer does a turn
                 self.board[x][y] = COMPUTER
                 return
 
@@ -125,23 +140,32 @@ class TicTacToe:
     def best_move(self):
         best_score = -math.inf
         best_move = (0, 0)
+
+        # select the scoring function based on current mode
+        strategies = {
+            Mode.MINIMAX: lambda b: self.minimax_search(b, False),
+            Mode.MINIMAX_AB: lambda b: self.minimax_alpha_beta_search(-math.inf, math.inf, b, False),
+            Mode.NEGAMAX: lambda b: -self.negamax_search(b, -1),
+        }
+        strategy = strategies.get(self.mode)
+
         # deep copy board
         board = [row[:] for row in self.board]
-        # Evaluate all possible moves and find the best one
+
+        # evaluate all possible moves and find the best one
         # using negamax search to determine optimal play
         for row in range(3):
             for col in range(3):
                 if board[row][col] == EMPTY:
-                    board[row][col] = COMPUTER
-                    score = self.minimax_search(board, False)
-                    # score = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
-                    # score = -self.negamax_search(board, -1)
-                    board[row][col] = EMPTY
+                    board[row][col] = COMPUTER # simulate move
+                    score = strategy(board)    # evaluate the move
+                    board[row][col] = EMPTY    # undo the move
+                    # update best move if this one scores higher
                     if score > best_score:
                         best_score = score
                         best_move = (row, col)
 
-        # computer makes the best move
+        # apply the best move
         self.board[best_move[0]][best_move[1]] = COMPUTER
         print(self.counter)
 
