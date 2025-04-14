@@ -3,6 +3,7 @@
 import pygame as pg
 import random
 import math
+import time
 from enum import Enum
 
 HEIGHT = WIDTH = 600
@@ -38,9 +39,11 @@ class TicTacToe:
         pg.init()
 
         # draw window screen
-        screen = pg.display.set_mode((WIDTH, HEIGHT))
-        clock = pg.time.Clock()
-
+        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        pg.display.set_caption("Tic Tac Toe")
+        self.clock = pg.time.Clock()
+        updateDelay = 0
+        
         # main loop
         while True:
             # player inputs
@@ -50,7 +53,7 @@ class TicTacToe:
                     pg.quit()
                     raise SystemExit
 
-                # players move
+                # player's move
                 if self.state == State.PLAYERS_TURN:
                     if event.type == pg.MOUSEBUTTONDOWN:
                         # find coordinates from the box that got clicked
@@ -66,6 +69,8 @@ class TicTacToe:
                             elif not self.turns_left(self.board):
                                 self.result = Result.TIE
                                 self.state = State.GAME_OVER
+                            updateDelay = time.time() + 0.7
+                    self.updateBoardDisplay()
                 # if possible Computer makes a move
                 # must be elif, because with if, the computer could move even when player won in the move before
                 elif self.state == State.COMPUTERS_TURN:
@@ -80,25 +85,26 @@ class TicTacToe:
                         elif not self.turns_left(self.board):
                             self.result = Result.TIE
                             self.state = State.GAME_OVER
+                        updateDelay = time.time() + 0.7
+                    self.updateBoardDisplay()
                 # Game is over
                 elif self.state == State.GAME_OVER:
-                    # if player decides to play further
+                    if time.time() > updateDelay:
+                        self.draw_end_screen(self.screen)
+                        pg.display.flip()
+                    # if player decides to play again
                     if event.type == pg.MOUSEBUTTONDOWN:
                         # game starts again so reset everything
                         self.board = self.reset_board()
                         self.state = State.PLAYERS_TURN
 
-            # draws tictactoe board, crosses and circles
-            self.draw_board(screen)
 
-            # if game ends draw endscreen
-            if self.state == State.GAME_OVER:
-                pg.time.delay(700)
-                self.draw_end_screen(screen)
 
-            # rendering
-            pg.display.flip()
-            clock.tick(FPS)
+    def updateBoardDisplay(self):
+        self.draw_board(self.screen)
+        pg.display.flip()
+        self.clock.tick(FPS)
+
 
     # calculate box coordinates from screen coordinates
     # (x,y) -> (row, col)
@@ -127,9 +133,9 @@ class TicTacToe:
             for col in range(3):
                 if board[row][col] == EMPTY:
                     board[row][col] = COMPUTER
-                    # score = self.minimax_search(board, False)
+                    score = self.minimax_search(board, False)
                     # score = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
-                    score = -self.negamax_search(board, -1)
+                    # score = -self.negamax_search(board, -1)
                     board[row][col] = EMPTY
                     if score > best_score:
                         best_score = score
