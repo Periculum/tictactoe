@@ -125,7 +125,7 @@ class TicTacToe:
         # using negamax search to determine optimal play
         for row in range(3):
             for col in range(3):
-                if board[row][col] == "":
+                if board[row][col] == EMPTY:
                     board[row][col] = COMPUTER
                     # score = self.minimax_search(board, False)
                     # score = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
@@ -230,12 +230,12 @@ class TicTacToe:
     # returns all possible moves
     def possible_moves(self, board):
         return [
-            (row, col) for row in range(3) for col in range(3) if board[row][col] == ""
+            (row, col) for row in range(3) for col in range(3) if board[row][col] == EMPTY
         ]
 
     # checks if moves are still possible
     def turns_left(self, board):
-        return any("" in row for row in board)
+        return any(EMPTY in row for row in board)
 
     # checks if game ends by a tie, win or loss
     def check_game_result(self, board):
