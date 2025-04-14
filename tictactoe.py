@@ -93,20 +93,13 @@ class TicTacToe:
             if self.state == State.GAME_OVER and time.time() > updateDelay:
                 self.draw_end_screen(self.screen)
             else:
-                self.updateBoardDisplay()
+                self.draw_board(self.screen)
 
             pg.display.flip()
             self.clock.tick(FPS)
 
         # Properly quit pygame when the loop ends
         pg.quit()
-
-
-
-    def updateBoardDisplay(self):
-        self.draw_board(self.screen)
-        pg.display.flip()
-        self.clock.tick(FPS)
 
 
     # calculate box coordinates from screen coordinates
