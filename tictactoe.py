@@ -119,8 +119,8 @@ class TicTacToe:
     def best_move(self):
         best_score = -math.inf
         best_move = (0, 0)
-        # copy board
-        board = list(self.board)
+        # deep copy board
+        board = [row[:] for row in self.board]
         # Evaluate all possible moves and find the best one
         # using negamax search to determine optimal play
         for row in range(3):
