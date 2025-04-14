@@ -100,9 +100,9 @@ class TicTacToe:
             pg.display.flip()
             clock.tick(FPS)
 
-    # calculate the coordinates from the clicked box
+    # calculate box coordinates from screen coordinates
+    # (x,y) -> (row, col)
     def calculate_box(self, position):
-        # inverting the order of the coordinates to made them more logically readable
         return (int(position[1] // (WIDTH / 3)), int(position[0] // (HEIGHT / 3)))
 
     # computer does a random move
