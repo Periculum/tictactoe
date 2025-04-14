@@ -47,56 +47,57 @@ class TicTacToe:
         # main loop
         while True:
             # player inputs
-            for event in pg.event.get():
-                # close game
-                if event.type == pg.QUIT:
-                    pg.quit()
-                    raise SystemExit
+            event = pg.event.poll()
+            if event.type == pg.QUIT:
+                pg.quit()
+                raise SystemExit
 
-                # player's move
-                if self.state == State.PLAYERS_TURN:
-                    if event.type == pg.MOUSEBUTTONDOWN:
-                        # find coordinates from the box that got clicked
-                        box_coordinates = self.calculate_box(pg.mouse.get_pos())
-                        # check if box is empty and set cross
-                        if self.board[box_coordinates[0]][box_coordinates[1]] == EMPTY:
-                            self.board[box_coordinates[0]][box_coordinates[1]] = PLAYER
-                            # switch to computers turn
-                            self.state = State.COMPUTERS_TURN
-                            if self.check_game_result(self.board) != 0:
-                                self.result = Result.PLAYER_WON
-                                self.state = State.GAME_OVER
-                            elif not self.turns_left(self.board):
-                                self.result = Result.TIE
-                                self.state = State.GAME_OVER
-                            updateDelay = time.time() + 0.7
-                    self.updateBoardDisplay()
-                # if possible Computer makes a move
-                # must be elif, because with if, the computer could move even when player won in the move before
-                elif self.state == State.COMPUTERS_TURN:
-                    if self.turns_left(self.board):
-                        # self.random_move()
-                        self.best_move()
-                        # players move again
-                        self.state = State.PLAYERS_TURN
+            # player's move
+            if self.state == State.PLAYERS_TURN:
+                if event.type == pg.MOUSEBUTTONDOWN:
+                    # find coordinates from the box that got clicked
+                    box_coordinates = self.calculate_box(pg.mouse.get_pos())
+                    # check if box is empty and set cross
+                    if self.board[box_coordinates[0]][box_coordinates[1]] == EMPTY:
+                        self.board[box_coordinates[0]][box_coordinates[1]] = PLAYER
+                        # switch to computers turn
+                        self.state = State.COMPUTERS_TURN
                         if self.check_game_result(self.board) != 0:
-                            self.result = Result.COMPUTER_WON
+                            self.result = Result.PLAYER_WON
                             self.state = State.GAME_OVER
                         elif not self.turns_left(self.board):
                             self.result = Result.TIE
                             self.state = State.GAME_OVER
-                        updateDelay = time.time() + 0.7
-                    self.updateBoardDisplay()
-                # Game is over
-                elif self.state == State.GAME_OVER:
-                    if time.time() > updateDelay:
-                        self.draw_end_screen(self.screen)
-                        pg.display.flip()
-                    # if player decides to play again
-                    if event.type == pg.MOUSEBUTTONDOWN:
-                        # game starts again so reset everything
-                        self.board = self.reset_board()
-                        self.state = State.PLAYERS_TURN
+                    updateDelay = time.time() + 0.7
+                self.updateBoardDisplay()
+            # if possible Computer makes a move
+            # must be elif, because with if, the computer could move even when player won in the move before
+            elif self.state == State.COMPUTERS_TURN:
+                if self.turns_left(self.board):
+                    # self.random_move()
+                    self.best_move()
+                    # players move again
+                    self.state = State.PLAYERS_TURN
+                    if self.check_game_result(self.board) != 0:
+                        self.result = Result.COMPUTER_WON
+                        self.state = State.GAME_OVER
+                    elif not self.turns_left(self.board):
+                        self.result = Result.TIE
+                        self.state = State.GAME_OVER
+                    updateDelay = time.time() + 0.7
+                self.updateBoardDisplay()
+            # Game is over
+            elif self.state == State.GAME_OVER:
+                print(time.time(), updateDelay)
+                if time.time() > updateDelay:
+                    self.draw_end_screen(self.screen)
+                    pg.display.flip()
+                    self.clock.tick(FPS)
+                # if player decides to play again
+                if event.type == pg.MOUSEBUTTONDOWN:
+                    # game starts again so reset everything
+                    self.board = self.reset_board()
+                    self.state = State.PLAYERS_TURN
 
 
 
