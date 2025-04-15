@@ -5,9 +5,34 @@ import random
 import math
 import time
 from enum import Enum
+from argparse import ArgumentParser
 
 HEIGHT = WIDTH = 600
 FPS = 24
+
+class Mode(Enum):
+    RANDOM = 0
+    MINIMAX = 1
+    NEGAMAX = 2
+    MINIMAX_AB = 3
+
+    def new(mode):
+        if isinstance(mode, int):
+            return Mode(mode)
+        elif isinstance(mode, str):
+            mode = mode.lower()
+            if mode == "random":
+                return Mode.RANDOM
+            elif mode == "minimax":
+                return Mode.MINIMAX
+            elif mode == "negamax":
+                return Mode.NEGAMAX
+            elif mode == "minimax-ab":
+                return Mode.MINIMAX_AB
+            else:
+                raise ValueError(f"Invalid mode: {mode}")
+        else:
+            raise TypeError(f"Mode must be int or str, not {type(mode).__name__}")
 
 
 class State(Enum):
@@ -16,10 +41,10 @@ class State(Enum):
     COMPUTERS_TURN = 2
 
 
-class Result(Enum):
+class Result():
     TIE = 0
-    PLAYER_WON = 1
-    COMPUTER_WON = 2
+    PLAYER_WON = -1
+    COMPUTER_WON = 1
 
 
 EMPTY = ""
@@ -28,11 +53,11 @@ COMPUTER = "O"
 
 
 class TicTacToe:
-    def __init__(self):
+    def __init__(self, mode):
         self.board = self.reset_board()
-        # controls who starts the game and the result
-        self.result = Result.TIE
+        self.result = None
         self.state = State.PLAYERS_TURN
+        self.mode = Mode(mode)
         self.counter = 0
 
     def runGame(self):
@@ -62,11 +87,10 @@ class TicTacToe:
                             self.board[box_coordinates[0]][box_coordinates[1]] = PLAYER
                             # switch to computers turn
                             self.state = State.COMPUTERS_TURN
-                            if self.check_game_result(self.board) != 0:
-                                self.result = Result.PLAYER_WON
-                                self.state = State.GAME_OVER
-                            elif not self.turns_left(self.board):
-                                self.result = Result.TIE
+                            # check if game has ended
+                            result = self.check_game_result(self.board)
+                            if result is not None:
+                                self.result = result
                                 self.state = State.GAME_OVER
                             updateDelay = time.time() + 0.7
                     elif self.state == State.GAME_OVER:
@@ -77,17 +101,15 @@ class TicTacToe:
             # State-specific updates (outside of event handling)
             if self.state == State.COMPUTERS_TURN:
                 if self.turns_left(self.board):
-                    # self.random_move()
-                    self.best_move()
+                    self.computer_makes_a_move()
                     # players move again
                     self.state = State.PLAYERS_TURN
-                    if self.check_game_result(self.board) != 0:
-                        self.result = Result.COMPUTER_WON
+                    # check if game has ended
+                    result = self.check_game_result(self.board)
+                    if result is not None:
+                        self.result = result
                         self.state = State.GAME_OVER
-                    elif not self.turns_left(self.board):
-                        self.result = Result.TIE
-                        self.state = State.GAME_OVER
-                    updateDelay = time.time() + 0.7
+                    updateDelay = time.time() + 0.5
 
             # Game over state handling
             if self.state == State.GAME_OVER and time.time() > updateDelay:
@@ -107,13 +129,20 @@ class TicTacToe:
     def calculate_box(self, position):
         return (int(position[1] // (WIDTH / 3)), int(position[0] // (HEIGHT / 3)))
 
+    # computers move based on the selected game mode
+    def computer_makes_a_move(self):
+        if self.mode == Mode.RANDOM:
+            self.random_move()
+        else:
+            self.best_move()
+
     # computer does a random move
     def random_move(self):
         while True:
             x = random.randint(0, 2)
             y = random.randint(0, 2)
+            # if the cell is empty, make the move and exit the loop
             if self.board[x][y] == EMPTY:
-                # computer does a turn
                 self.board[x][y] = COMPUTER
                 return
 
@@ -121,23 +150,32 @@ class TicTacToe:
     def best_move(self):
         best_score = -math.inf
         best_move = (0, 0)
+
+        # select the scoring function based on current mode
+        strategies = {
+            Mode.MINIMAX: lambda b: self.minimax_search(b, False),
+            Mode.MINIMAX_AB: lambda b: self.minimax_alpha_beta_search(-math.inf, math.inf, b, False),
+            Mode.NEGAMAX: lambda b: -self.negamax_search(b, -1),
+        }
+        strategy = strategies.get(self.mode)
+
         # deep copy board
         board = [row[:] for row in self.board]
-        # Evaluate all possible moves and find the best one
+
+        # evaluate all possible moves and find the best one
         # using negamax search to determine optimal play
         for row in range(3):
             for col in range(3):
                 if board[row][col] == EMPTY:
-                    board[row][col] = COMPUTER
-                    score = self.minimax_search(board, False)
-                    # score = self.minimax_alpha_beta_search(-math.inf, math.inf, board, False)
-                    # score = -self.negamax_search(board, -1)
-                    board[row][col] = EMPTY
+                    board[row][col] = COMPUTER # simulate move
+                    score = strategy(board)    # evaluate the move
+                    board[row][col] = EMPTY    # undo the move
+                    # update best move if this one scores higher
                     if score > best_score:
                         best_score = score
                         best_move = (row, col)
 
-        # computer makes the best move
+        # apply the best move
         self.board[best_move[0]][best_move[1]] = COMPUTER
         print(self.counter)
 
@@ -145,12 +183,9 @@ class TicTacToe:
         self.counter += 1
         # if game is finished stop search and return result
         result = self.check_game_result(board)
-        if result != 0:
-            # someone won
+        if result is not None:
+            # there is a win, loss or tie
             return result
-        elif not self.turns_left(board):
-            # tie
-            return 0
 
         # if max players turn
         if max_player:
@@ -175,12 +210,9 @@ class TicTacToe:
         self.counter += 1
         # if game is finished stop search and return result
         result = self.check_game_result(board)
-        if result != 0:
-            # someone won
+        if result is not None:
+            # there is a win, loss or tie
             return result
-        elif not self.turns_left(board):
-            # tie
-            return 0
 
         # if max players turn
         if max_player:
@@ -211,12 +243,9 @@ class TicTacToe:
         self.counter += 1
         # if game is finished stop search and return result
         result = self.check_game_result(board)
-        if result != 0:
-            # someone won
+        if result is not None:
+            # there is a win, loss or tie
             return result * color
-        elif not self.turns_left(board):
-            # tie
-            return 0
 
         max_score = -math.inf
         for move in self.possible_moves(board):
@@ -250,13 +279,18 @@ class TicTacToe:
             col_values = "".join(board[r][i] for r in range(3))
             if "XXX" in (row_values, col_values, diagonal_left, diagonal_right):
                 # player won
-                return -1
+                return Result.PLAYER_WON
             elif "OOO" in (row_values, col_values, diagonal_left, diagonal_right):
                 # computer won
-                return 1
+                return Result.COMPUTER_WON
 
-        # no winner
-        return 0
+        # check if board is full (tie)
+        if not any(EMPTY in row for row in board):
+            return Result.TIE
+
+        # Game still running
+        return None
+
 
     def draw_board(self, screen):
         # fill background and draw tictactoe-field
@@ -311,8 +345,8 @@ class TicTacToe:
         font_small = pg.font.Font(None, 40)
 
         # texts
-        text_type = ["It's a Tie!", "You Won!", "You Lost!"]
-        text = font.render(text_type[self.result.value], True, "black")
+        text_type = ["You Won!", "It's a Tie!", "You Lost!"]
+        text = font.render(text_type[self.result + 1], True, "black")
         text_klick = font_small.render("Click anywhere to start again", True, "black")
 
         # draw screen and texts
@@ -333,7 +367,14 @@ class TicTacToe:
 
 
 def main():
-    ttt = TicTacToe()
+    # parsing arguments
+    parser = ArgumentParser(
+        prog='Tic Tac Toe',
+        description='Small Pygame with different Computer enemys')
+    parser.add_argument('-m', '--mode', type=str, choices=["random", "minimax", "minimax-ab", "negamax"], default= "minimax-ab")
+    args = parser.parse_args()
+
+    ttt = TicTacToe(Mode.new(args.mode))
     ttt.runGame()
 
 
