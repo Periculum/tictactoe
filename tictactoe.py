@@ -100,16 +100,15 @@ class TicTacToe:
 
             # State-specific updates (outside of event handling)
             if self.state == State.COMPUTERS_TURN:
-                if self.turns_left(self.board):
-                    self.computer_makes_a_move()
-                    # players move again
-                    self.state = State.PLAYERS_TURN
-                    # check if game has ended
-                    result = self.check_game_result(self.board)
-                    if result is not None:
-                        self.result = result
-                        self.state = State.GAME_OVER
-                    updateDelay = time.time() + 0.5
+                self.computer_makes_a_move()
+                # players move again
+                self.state = State.PLAYERS_TURN
+                # check if game has ended
+                result = self.check_game_result(self.board)
+                if result is not None:
+                    self.result = result
+                    self.state = State.GAME_OVER
+                updateDelay = time.time() + 0.5
 
             # Game over state handling
             if self.state == State.GAME_OVER and time.time() > updateDelay:
@@ -263,10 +262,7 @@ class TicTacToe:
         return [
             (row, col) for row in range(3) for col in range(3) if board[row][col] == EMPTY
         ]
-
-    # checks if moves are still possible
-    def turns_left(self, board):
-        return any(EMPTY in row for row in board)
+        
 
     # checks if game ends by a tie, win or loss
     def check_game_result(self, board):
