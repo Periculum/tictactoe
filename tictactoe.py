@@ -40,6 +40,12 @@ class State(Enum):
     PLAYERS_TURN = 1
     COMPUTERS_TURN = 2
 
+    def new(computers_turn):
+        if computers_turn:
+            return State.COMPUTERS_TURN
+        else:
+            return State.PLAYERS_TURN
+
 
 class Result():
     TIE = 0
@@ -53,11 +59,12 @@ COMPUTER = "O"
 
 
 class TicTacToe:
-    def __init__(self, mode):
+    def __init__(self, mode, state):
         self.board = self.reset_board()
         self.result = None
-        self.state = State.PLAYERS_TURN
         self.mode = Mode(mode)
+        self.state = State(state)
+        self.starting_player = self.state
         self.counter = 0
 
     def runGame(self):
@@ -94,9 +101,16 @@ class TicTacToe:
                                 self.state = State.GAME_OVER
                             updateDelay = time.time() + 0.7
                     elif self.state == State.GAME_OVER:
-                        # game starts again so reset everything
+                        # game starts again so reset board
                         self.board = self.reset_board()
-                        self.state = State.PLAYERS_TURN
+                        # switching player
+                        self.starting_player = (
+                            State.COMPUTERS_TURN
+                            if self.starting_player == State.PLAYERS_TURN
+                            else State.PLAYERS_TURN
+                            )
+                        self.state = self.starting_player
+
 
             # State-specific updates (outside of event handling)
             if self.state == State.COMPUTERS_TURN:
@@ -367,10 +381,13 @@ def main():
     parser = ArgumentParser(
         prog='Tic Tac Toe',
         description='Small Pygame with different Computer enemys')
-    parser.add_argument('-m', '--mode', type=str, choices=["random", "minimax", "minimax-ab", "negamax"], default= "minimax-ab")
+    parser.add_argument('-c', '--computer', required=False, action="store_true",
+        help="Computer starts instead of the player")
+    parser.add_argument('-m', '--mode', type=str, choices=["random", "minimax", "minimax-ab", "negamax"], default= "minimax-ab",
+        help="choose algorithm with computer would answer")
     args = parser.parse_args()
 
-    ttt = TicTacToe(Mode.new(args.mode))
+    ttt = TicTacToe(Mode.new(args.mode), State.new(args.computer))
     ttt.runGame()
 
 
