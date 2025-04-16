@@ -382,9 +382,9 @@ def main():
         prog='Tic Tac Toe',
         description='Small Pygame with different Computer enemys')
     parser.add_argument('-c', '--computer', required=False, action="store_true",
-        help="Computer starts instead of the player")
+        help="Let the computer make the first move instead of the player.")
     parser.add_argument('-m', '--mode', type=str, choices=["random", "minimax", "minimax-ab", "negamax"], default= "minimax-ab",
-        help="choose algorithm with computer would answer")
+        help="Select the algorithm the computer will use to make moves.")
     args = parser.parse_args()
 
     ttt = TicTacToe(Mode.new(args.mode), State.new(args.computer))
