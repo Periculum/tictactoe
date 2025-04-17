@@ -63,8 +63,7 @@ class TicTacToe:
         self.board = self.reset_board()
         self.result = None
         self.mode = Mode(mode)
-        self.state = State(state)
-        self.starting_player = self.state
+        self.starting_player = State(state)
         self.counter = 0
 
     def runGame(self):
@@ -75,6 +74,9 @@ class TicTacToe:
         pg.display.set_caption("Tic Tac Toe")
         clock = pg.time.Clock()
         updateDelay = 0
+
+        # starting player
+        state = self.starting_player
         
         # main loop
         running = True
@@ -86,21 +88,21 @@ class TicTacToe:
                 
                 # Handle mouse clicks in appropriate states
                 if event.type == pg.MOUSEBUTTONDOWN:
-                    if self.state == State.PLAYERS_TURN:
+                    if state == State.PLAYERS_TURN:
                         # find coordinates from the box that got clicked
                         box_coordinates = self.calculate_box(pg.mouse.get_pos())
                         # check if box is empty and set cross
                         if self.board[box_coordinates[0]][box_coordinates[1]] == EMPTY:
                             self.board[box_coordinates[0]][box_coordinates[1]] = PLAYER
                             # switch to computers turn
-                            self.state = State.COMPUTERS_TURN
+                            state = State.COMPUTERS_TURN
                             # check if game has ended
                             result = self.check_game_result(self.board)
                             if result is not None:
                                 self.result = result
-                                self.state = State.GAME_OVER
+                                state = State.GAME_OVER
                             updateDelay = time.time() + 0.7
-                    elif self.state == State.GAME_OVER:
+                    elif state == State.GAME_OVER:
                         # game starts again so reset board
                         self.board = self.reset_board()
                         # switching player
@@ -109,23 +111,23 @@ class TicTacToe:
                             if self.starting_player == State.PLAYERS_TURN
                             else State.PLAYERS_TURN
                             )
-                        self.state = self.starting_player
+                        state = self.starting_player
 
 
             # State-specific updates (outside of event handling)
-            if self.state == State.COMPUTERS_TURN:
+            if state == State.COMPUTERS_TURN:
                 self.computer_makes_a_move()
                 # players move again
-                self.state = State.PLAYERS_TURN
+                state = State.PLAYERS_TURN
                 # check if game has ended
                 result = self.check_game_result(self.board)
                 if result is not None:
                     self.result = result
-                    self.state = State.GAME_OVER
+                    state = State.GAME_OVER
                 updateDelay = time.time() + 0.5
 
             # Game over state handling
-            if self.state == State.GAME_OVER and time.time() > updateDelay:
+            if state == State.GAME_OVER and time.time() > updateDelay:
                 self.draw_end_screen(screen)
             else:
                 self.draw_board(screen)
@@ -166,9 +168,9 @@ class TicTacToe:
 
         # select the scoring function based on current mode
         strategies = {
-            Mode.MINIMAX: lambda b: self.minimax_search(b, False),
-            Mode.MINIMAX_AB: lambda b: self.minimax_alpha_beta_search(-math.inf, math.inf, b, False),
-            Mode.NEGAMAX: lambda b: -self.negamax_search(b, -1),
+            Mode.MINIMAX: lambda b: self.minimax_search(1, b, False),
+            Mode.MINIMAX_AB: lambda b: self.minimax_alpha_beta_search(1, -math.inf, math.inf, b, False),
+            Mode.NEGAMAX: lambda b: -self.negamax_search(1, b, -1),
         }
         strategy = strategies.get(self.mode)
 
@@ -177,35 +179,33 @@ class TicTacToe:
 
         # evaluate all possible moves and find the best one
         # using negamax search to determine optimal play
-        for row in range(3):
-            for col in range(3):
-                if board[row][col] == EMPTY:
-                    board[row][col] = COMPUTER # simulate move
-                    score = strategy(board)    # evaluate the move
-                    board[row][col] = EMPTY    # undo the move
-                    # update best move if this one scores higher
-                    if score > best_score:
-                        best_score = score
-                        best_move = (row, col)
+        for (row, col) in self.possible_moves(board):
+            board[row][col] = COMPUTER # simulate move
+            score = strategy(board)    # evaluate the move
+            board[row][col] = EMPTY    # undo the move
+            # update best move if this one scores higher
+            if score > best_score:
+                best_score = score
+                best_move = (row, col)
 
         # apply the best move
         self.board[best_move[0]][best_move[1]] = COMPUTER
         print(self.counter)
 
-    def minimax_search(self, board, max_player):
+    def minimax_search(self, depth, board, max_player):
         self.counter += 1
         # if game is finished stop search and return result
         result = self.check_game_result(board)
         if result is not None:
             # there is a win, loss or tie
-            return result
+            return result/depth
 
         # if max players turn
         if max_player:
             max_score = -math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = COMPUTER
-                score = self.minimax_search(board, False)
+                score = self.minimax_search(depth + 1, board, False)
                 board[move[0]][move[1]] = EMPTY
                 max_score = max(max_score, score)
             return max_score
@@ -214,25 +214,25 @@ class TicTacToe:
             min_score = math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = PLAYER
-                score = self.minimax_search(board, True)
+                score = self.minimax_search(depth + 1, board, True)
                 board[move[0]][move[1]] = EMPTY
                 min_score = min(min_score, score)
             return min_score
 
-    def minimax_alpha_beta_search(self, alpha, beta, board, max_player):
+    def minimax_alpha_beta_search(self, depth, alpha, beta, board, max_player):
         self.counter += 1
         # if game is finished stop search and return result
         result = self.check_game_result(board)
         if result is not None:
             # there is a win, loss or tie
-            return result
+            return result/depth
 
         # if max players turn
         if max_player:
             max_score = -math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = COMPUTER
-                score = self.minimax_alpha_beta_search(alpha, beta, board, False)
+                score = self.minimax_alpha_beta_search(depth + 1, alpha, beta, board, False)
                 board[move[0]][move[1]] = EMPTY
                 max_score = max(max_score, score)
                 alpha = max(alpha, score)
@@ -244,7 +244,7 @@ class TicTacToe:
             min_score = math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = PLAYER
-                score = self.minimax_alpha_beta_search(alpha, beta, board, True)
+                score = self.minimax_alpha_beta_search(depth + 1, alpha, beta, board, True)
                 board[move[0]][move[1]] = EMPTY
                 min_score = min(min_score, score)
                 beta = min(beta, score)
@@ -252,13 +252,13 @@ class TicTacToe:
                     break
             return min_score
 
-    def negamax_search(self, board, color):
+    def negamax_search(self, depth, board, color):
         self.counter += 1
         # if game is finished stop search and return result
         result = self.check_game_result(board)
         if result is not None:
             # there is a win, loss or tie
-            return result * color
+            return (result * color) / depth
 
         max_score = -math.inf
         for move in self.possible_moves(board):
@@ -266,7 +266,7 @@ class TicTacToe:
                 board[move[0]][move[1]] = COMPUTER
             else:
                 board[move[0]][move[1]] = PLAYER
-            score = -self.negamax_search(board, -color)
+            score = -self.negamax_search(depth + 1, board, -color)
             max_score = max(max_score, score)
             board[move[0]][move[1]] = EMPTY
         return max_score
