@@ -64,7 +64,6 @@ class TicTacToe:
         self.result = None
         self.mode = Mode(mode)
         self.starting_player = State(state)
-        self.counter = 0
 
     def runGame(self):
         pg.init()
@@ -169,7 +168,7 @@ class TicTacToe:
         # select the scoring function based on current mode
         strategies = {
             Mode.MINIMAX: lambda b: self.minimax_search(1, b, False),
-            Mode.MINIMAX_AB: lambda b: self.minimax_alpha_beta_search(1, -math.inf, math.inf, b, False),
+            Mode.MINIMAX_AB: lambda b: self.alpha_beta_search(1, -math.inf, math.inf, b, False),
             Mode.NEGAMAX: lambda b: -self.negamax_search(1, b, -1),
         }
         strategy = strategies.get(self.mode)
@@ -190,18 +189,16 @@ class TicTacToe:
 
         # apply the best move
         self.board[best_move[0]][best_move[1]] = COMPUTER
-        print(self.counter)
 
-    def minimax_search(self, depth, board, max_player):
-        self.counter += 1
+    def minimax_search(self, depth, board, is_maximizing):
         # if game is finished stop search and return result
         result = self.check_game_result(board)
         if result is not None:
             # there is a win, loss or tie
-            return result/depth
+            return result / depth
 
         # if max players turn
-        if max_player:
+        if is_maximizing:
             max_score = -math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = COMPUTER
@@ -219,20 +216,19 @@ class TicTacToe:
                 min_score = min(min_score, score)
             return min_score
 
-    def minimax_alpha_beta_search(self, depth, alpha, beta, board, max_player):
-        self.counter += 1
+    def alpha_beta_search(self, depth, alpha, beta, board, is_maximizing):
         # if game is finished stop search and return result
         result = self.check_game_result(board)
         if result is not None:
             # there is a win, loss or tie
-            return result/depth
+            return result / depth
 
         # if max players turn
-        if max_player:
+        if is_maximizing:
             max_score = -math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = COMPUTER
-                score = self.minimax_alpha_beta_search(depth + 1, alpha, beta, board, False)
+                score = self.alpha_beta_search(depth + 1, alpha, beta, board, False)
                 board[move[0]][move[1]] = EMPTY
                 max_score = max(max_score, score)
                 alpha = max(alpha, score)
@@ -244,7 +240,7 @@ class TicTacToe:
             min_score = math.inf
             for move in self.possible_moves(board):
                 board[move[0]][move[1]] = PLAYER
-                score = self.minimax_alpha_beta_search(depth + 1, alpha, beta, board, True)
+                score = self.alpha_beta_search(depth + 1, alpha, beta, board, True)
                 board[move[0]][move[1]] = EMPTY
                 min_score = min(min_score, score)
                 beta = min(beta, score)
@@ -373,7 +369,7 @@ class TicTacToe:
     # reset board
     def reset_board(self):
         return [[EMPTY for _ in range(3)] for _ in range(3)]
-        # return [['','','X'],['X','','O'],['O','O','X']] # position from infographic
+        # return [['','','O'],['O','','X'],['X','X','O']] # position from infographic
 
 
 def main():
