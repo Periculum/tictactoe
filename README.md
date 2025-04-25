@@ -28,7 +28,7 @@ Additional you have the following parameters:
 
 ## Copyright
 
-Copyright ©️ 2023 Wilhelm Drehling, Heise Medien GmbH & Co. KG
+Copyright ©️ 2025 Wilhelm Drehling, Heise Medien GmbH & Co. KG
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
