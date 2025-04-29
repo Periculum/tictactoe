@@ -7,7 +7,7 @@ import time
 from enum import Enum
 from argparse import ArgumentParser
 
-HEIGHT = WIDTH = 600
+HEIGHT = WIDTH = 700
 FPS = 24
 
 class Mode(Enum):
@@ -283,10 +283,10 @@ class TicTacToe:
         for i in range(3):
             row_values = "".join(board[i])
             col_values = "".join(board[r][i] for r in range(3))
-            if "XXX" in (row_values, col_values, diagonal_left, diagonal_right):
+            if PLAYER*3 in (row_values, col_values, diagonal_left, diagonal_right):
                 # player won
                 return Result.PLAYER_WON
-            elif "OOO" in (row_values, col_values, diagonal_left, diagonal_right):
+            elif COMPUTER*3 in (row_values, col_values, diagonal_left, diagonal_right):
                 # computer won
                 return Result.COMPUTER_WON
 
