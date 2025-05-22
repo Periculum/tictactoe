@@ -60,7 +60,7 @@ COMPUTER = "O"
 
 class TicTacToe:
     def __init__(self, mode, state):
-        self.board = self.reset_board()
+        self.board = self.get_empty_board()
         self.result = None
         self.mode = Mode(mode)
         self.starting_player = State(state)
@@ -103,13 +103,12 @@ class TicTacToe:
                             updateDelay = time.time() + 0.7
                     elif state == State.GAME_OVER:
                         # game starts again so reset board
-                        self.board = self.reset_board()
+                        self.board = self.get_empty_board()
                         # switching player
-                        self.starting_player = (
-                            State.COMPUTERS_TURN
-                            if self.starting_player == State.PLAYERS_TURN
-                            else State.PLAYERS_TURN
-                            )
+                        if self.starting_player == State.PLAYERS_TURN:
+                            self.starting_player = State.COMPUTERS_TURN
+                        else:
+                            self.starting_player = State.PLAYERS_TURN
                         state = self.starting_player
 
 
@@ -249,7 +248,6 @@ class TicTacToe:
             return min_score
 
     def negamax_search(self, depth, board, color):
-        self.counter += 1
         # if game is finished stop search and return result
         result = self.check_game_result(board)
         if result is not None:
@@ -367,7 +365,7 @@ class TicTacToe:
         )
 
     # reset board
-    def reset_board(self):
+    def get_empty_board(self):
         return [[EMPTY for _ in range(3)] for _ in range(3)]
         # return [['','','O'],['O','','X'],['X','X','O']] # position from infographic
 
